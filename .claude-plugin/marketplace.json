@@ -1,0 +1,9 @@
+{
+  "plugins": [
+    {
+      "name": "assess-strat",
+      "description": "Assess strategy quality against a scoring rubric with calibration examples from real pipeline output across four dimensions: feasibility, testability, scope, and architecture.",
+      "source": "."
+    }
+  ]
+}

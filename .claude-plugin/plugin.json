@@ -1,0 +1,8 @@
+{
+  "name": "assess-strat",
+  "description": "Assess RHAISTRAT strategies against quality criteria using a scored rubric with calibration examples",
+  "version": "1.0.0",
+  "author": {
+    "name": "Eder Ignatowicz"
+  }
+}
