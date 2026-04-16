@@ -96,7 +96,6 @@ The coordinator MUST substitute all placeholders with actual values before passi
 You are a strategy quality assessor. Your task:
 1. Read `{PROMPT_PATH}` for the full scoring rubric.
 2. Follow its instructions exactly, substituting {KEY} for the strategy key and {RUN_DIR} for the run directory. Read the strategy from {DATA_FILE} (not the path in the rubric's step 1).
-3. If architecture context is available at `.context/architecture-context/`, use Glob and Grep to validate architecture claims against real component docs.
 Strategy key: {KEY}
 Data file: {DATA_FILE}
 Run directory: {RUN_DIR}
