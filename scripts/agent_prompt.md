@@ -79,63 +79,93 @@ If architecture context is available, validate claims against it:
 
 ## Calibration Examples
 
-All examples are from real pipeline output (RHAISTRAT strategies).
+All examples are from real pipeline output (dashboard35 batch, April 2026) unless noted otherwise. Quotes are from reviewer assessments, not strategy text.
 
 ### Feasibility
 
-**F=2: STRAT-1469 (Llama Stack Distribution Cleanup)**
-> Effort S is credible for what is essentially a config.yaml edit, Containerfile cleanup, doc update, and test update.
+**F=2: RHAISTRAT-1374 (Remove Inline Providers from Llama Stack)**
+> Effort S is credible for config.yaml edits, Containerfile regeneration, doc updates, and test runs. No external blockers. Precedent established by prior inline::meta-reference removal — this is four more of the same operation.
 
-No external blockers. Bounded work, credible effort, breaking change risk mitigated by EA status.
+No external blockers. Bounded work, credible effort. Established pattern proves the approach.
 
-**F=1: STRAT-1432 (Structured Output Enforcement)**
-> The entire Phase 1 depends on xgrammar `structural_tag` (RFC #32142), which is listed as 'in progress' with unknown merge date. The strategy acknowledges this blocks Phase 1 'entirely' but offers only weak mitigation ('track RFC closely').
+**F=1: STRAT-737 (MaaS Quotas on Endpoints Page)**
+> Limitador counter query feasibility remains unvalidated — this is a hard blocker. Limitador is a rate limiter, not a usage tracker. Its counters track current-window consumption, not historical cumulative usage. The RFE requires "Cumulative Tokens Generated / Last 30 Days."
 
-Technical approach is sound but critical path dependency has no fallback. "Track closely" is not a contingency plan.
+The entire feature depends on a data source that may not exist. Nobody validated whether Limitador exposes the needed data. "Unvalidated assumption" is not a contingency plan.
 
-**F=0: STRAT-1547 (External Model Registration)**
-> The strategy sizes the work as M, but the backend alone is an M and the UI is another M. Two of three MVP providers need request translation that isn't described, sized, or assigned.
+**F=1: RHAISTRAT-1418 (Responses API GA Readiness)**
+> vllm-gaudi is at v0.14.1 and does not have Responses API endpoints. The strategy claims "same changes (shared codebase)" which is incorrect. GA readiness on Gaudi requires either a version bump or explicit deferral.
 
-Core scope is unknowable because fundamental design questions are deferred. Hard blocker has unknown status.
+Technical approach is sound for one platform (vllm-cpu) but the "shared codebase" claim is factually wrong for the other (vllm-gaudi). Dependency gap has no fallback.
+
+**F=0: STRAT-163 (Data Provenance and Lineage)**
+> XL effort is undersized for 5+ team cross-component work. Critical design questions are all deferred to open questions. No contingency plans for any dependency. The Dashboard proxy path is incorrectly described: port 8343 serves the embedded MLflow UI, not the tracking API.
+
+All design questions deferred. No single owner across 5+ teams. Effort cannot be validated because the design is not done.
 
 ### Testability
 
-**T=2: STRAT-1469 (Llama Stack Distribution Cleanup)**
-> All acceptance criteria are directly testable with concrete verification steps. Each inline provider removal can be verified by confirming the provider is absent from config.yaml, dependencies are absent from the built image, and the provider cannot be instantiated at runtime. Binary pass/fail checks.
+**T=2: RHAISTRAT-1284 (Test Connection During Creation Flow)**
+> Per-type probe specifications are concrete and verifiable (PostgreSQL: `SELECT 1`, S3: `HeadBucket`, MongoDB: `ping`, Redis: `PING`, HuggingFace: `GET /api/whoami`). The 10-second timeout is explicit. Error messages are specific and actionable. Button state transitions are binary pass/fail.
 
-Every criterion maps to a concrete, automatable verification step. Measurable targets. No subjective judgment.
+Every criterion has a concrete verification method with explicit thresholds. Binary pass/fail. Automatable.
 
 **T=1: STRAT-1625 (Resource Badges)**
 > The 'Updated' badge derivation is the weakest testability point. The strategy says 'Updated' applies when content changed in the current release but existed in a prior release. The dashboard has no prior-version state available client-side.
 
 Two of three badge types have clear verification. One has undefined derivation logic. Narrow gap, fixable.
 
-**T=0: STRAT-1432 (Structured Output Enforcement)**
-> Acceptance criteria 1 ('produces only well-formed, schema-conformant tool calls') is testable in principle but lacks a verification protocol. How do you prove a negative?
+**T=1: RHAISTRAT-1418 (Responses API GA Readiness)**
+> The top-level success criterion is "a customer application written against the OpenAI Responses API works with zero code changes." There is still no test plan for this. No test suite, no reference application, no verification method. Without this test, the "zero code changes" claim is untestable marketing language.
 
-Primary criterion asks for proof of a negative. No test matrix defined. Primary use case (parallel tool calls) absent from criteria.
+Criteria exist and are specific, but the gold-standard criterion has no verification infrastructure behind it. A claim without a test is not an acceptance criterion.
+
+**T=1: STRAT-334 (Live Tracing and Observability)**
+> "Users Understand Execution Flow" — subjective, not testable. "Near-real-time" — undefined latency threshold. "Tracing Maintains Usability" — "does not significantly disrupt" is subjective. "Trace Content is Actionable" — subjective.
+
+Criteria use subjective language with no measurable thresholds. Replacements needed: "spans appear within 5 seconds," "adds <10% latency," "renders within 1 second for 100 spans."
+
+**T=0: STRAT-163 (Data Provenance and Lineage)**
+> Acceptance criteria are aspirational with no verification protocol, no thresholds, no test matrix. "Automatically log" and "displays a graph" are not binary pass/fail. This is the hardest strategy to test because it spans 5+ teams and 6+ components with no integration test plan.
+
+Aspirational criteria with no verification protocol. No component names, no API endpoints, no expected outputs. Untestable as written.
+
+**T=0: RHAISTRAT-1422 (Hide Default Workbench Images)**
+> Still no acceptance criteria defined after two review cycles. Feature is inherently testable but criteria are missing. This is the easiest fix in the entire batch. This strategy is one 15-minute edit away from full approval.
+
+Feature is inherently testable — a simple config toggle with clear expected behavior. The problem is purely that the strategy does not define acceptance criteria. "Missing criteria" is a different failure mode from "untestable criteria."
 
 ### Scope
 
-**S=2: STRAT-1469 (Llama Stack Distribution Cleanup)**
-> The scope is explicitly bounded. The strategy names exactly four providers to remove. It does not use phrases like 'and related functionality.' The scope is a closed set.
+**S=2: RHAISTRAT-1374 (Remove Inline Providers from Llama Stack)**
+> Finite enumerated set of four providers to remove from one component. Single team, single repo, bounded work. No scope expansion risk. The strategy does not use phrases like "and related functionality." The scope is a closed set.
 
 Finite, enumerated deliverables. Clear definition of done. One team, one component. Effort matches work.
 
-**S=1: STRAT-1432 (Structured Output Enforcement)**
-> Effort L is underestimated given the actual scope. Multi-tool call handling is left as an open question but is the primary use case.
+**S=1: STRAT-737 (MaaS Quotas on Endpoints Page)**
+> Major scope trap: bundles two separate features (MaaS quota display + Classic model quota system design). The Classic path requires designing an entirely new quota mechanism which is strategy-sized work on its own.
 
-Single coherent capability but effort is underestimated. Two-phase approach doubles test matrix without sizing it.
+Two distinct features bundled by proximity to the same UI page. The Classic quota mechanism is undesigned and represents separate strategy-sized work.
 
-**S=0: STRAT-1479 (MLflow Integration)**
-> This is three features bundled as one. Feature A: MLflow logging in KFP pipeline components. Feature B: Eval Hub MLflow run context passthrough. Feature C: Model Registry <-> MLflow bidirectional lineage. Each is independently valuable and independently deliverable.
+**S=1: STRAT-334 (Live Tracing and Observability)**
+> Single coherent capability but spans 5 components across 4 teams. Effort L may be underestimated given the breadth of integration work.
 
-Three independent features, different component owners, different dependencies. Six components across five teams.
+Single coherent capability but effort is underestimated for cross-team coordination. The feature itself is right-sized; the effort estimate is not.
+
+**S=0: RHAISTRAT-1153 (Feature Distribution Monitoring)**
+> Bundles three independently deliverable features that span three teams: (a) distribution computation CronJob + Prometheus metrics export, (b) historical distribution UI with time-series charts, (c) feature quality dashboards with filtering. Shipping as a single strategy creates a coordination bottleneck.
+
+Three independent features, different team owners. The SPLIT verdict (not REJECT) applies because other dimensions are adequate — the fix is decomposition, not revision.
+
+**S=0: STRAT-163 (Data Provenance and Lineage)**
+> Bundles 3+ independent features (pipeline instrumentation, MLflow-Model Registry linking, DAG visualization UI) across 5 teams and 6+ components. All-or-nothing delivery risk.
+
+Three independent features, different component owners, different dependencies. Six components across five teams. No single owner.
 
 ### Architecture
 
-**A=2: STRAT-1469 (Llama Stack Distribution Cleanup)**
-> Dependencies are correctly identified. Removing inline providers from config.yaml is the architecturally correct approach — the build system resolves dependencies from the active provider list. No other RHOAI components depend on the inline providers being present.
+**A=2: RHAISTRAT-1374 (Remove Inline Providers from Llama Stack)**
+> All architectural claims validated against architecture docs. config.yaml-driven provider resolution via build.py/list-deps is the documented build path. Remote equivalents confirmed to exist. No other components depend on these inline providers.
 
 Components correctly identified. Integration pattern correct per architecture docs. No cross-component conflicts.
 
@@ -144,6 +174,12 @@ Components correctly identified. Integration pattern correct per architecture do
 
 Architecture is correct but one field name question is unresolved (OdhDocument `version` field existence). Minor gap, not a fundamental misunderstanding.
 
+**A=1: STRAT-728 (User-Level Secrets Management)**
+> Internal contradiction: impersonation vs. SA credentials. The strategy says the backend "impersonates the user via their forwarded token" but also describes BFF-level label filtering that implies SA credentials are used. If using user impersonation, the user's own RBAC determines visibility. If using SA credentials, the BFF must filter.
+
+Neither approach is wrong individually, but claiming both creates an ambiguous security model. Contradictory design assumptions are an architecture gap even when each assumption is individually valid.
+
+<!-- TODO: Eder — validate or replace with a real A=0 example from batch output. No strategy in 59 reviews scored A=0. -->
 **A=0: STRAT-1547 (External Model Registration)**
 > HTTPRoute cannot directly proxy to external endpoints — the strategy's core traffic routing assumption is incorrect. The MaaS gateway accepts HTTPRoutes that reference internal Services. An external endpoint like api.openai.com is not a Kubernetes Service.
 
@@ -175,15 +211,21 @@ REJECT:   total < 3   OR   zeros in 2+ dimensions
 
 ## Expected Scores for Calibration Strategies
 
-Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning.
+Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from real pipeline reviews unless noted.
 
 | Strategy | F | T | S | A | Total | Verdict |
 |----------|---|---|---|---|-------|---------|
-| STRAT-1469 (Llama Stack cleanup) | 2 | 2 | 2 | 2 | 8 | APPROVE |
+| RHAISTRAT-1374 (Llama Stack cleanup) | 2 | 2 | 2 | 2 | 8 | APPROVE |
+| RHAISTRAT-1284 (Test connection) | 1 | 2 | 2 | 1 | 6 | APPROVE |
 | STRAT-1625 (Resource badges) | 2 | 1 | 2 | 1 | 6 | APPROVE |
-| STRAT-1432 (Structured output) | 1 | 0 | 1 | 1 | 3 | REVISE |
-| STRAT-1479 (MLflow integration) | 1 | 1 | 0 | 1 | 3 | SPLIT |
+| RHAISTRAT-1418 (Responses API GA) | 1 | 1 | 2 | 1 | 5 | REVISE |
+| RHAISTRAT-1422 (Hide workbench images) | 2 | 0 | 2 | 1 | 5 | REVISE |
+| STRAT-728 (User-level secrets) | 1 | 1 | 2 | 1 | 5 | REVISE |
+| STRAT-334 (Live tracing) | 1 | 1 | 1 | 1 | 4 | REVISE |
+| STRAT-737 (MaaS quotas) | 1 | 1 | 1 | 1 | 4 | REVISE |
+| RHAISTRAT-1153 (Feature distribution) | 1 | 1 | 0 | 1 | 3 | SPLIT |
 | STRAT-1547 (External models) | 0 | 1 | 1 | 0 | 2 | REJECT |
+| STRAT-163 (Data provenance) | 0 | 0 | 0 | 1 | 1 | REJECT |
 
 ## Output Format
 
