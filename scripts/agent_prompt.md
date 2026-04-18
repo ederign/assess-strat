@@ -30,6 +30,7 @@ You are scoring a RHAISTRAT strategy. Strategies describe implementation approac
 - No unresolved "open questions" on the critical path
 - External dependencies (if any) have known status and fallback plans
 - Risk mitigations are specific, not vague ("track closely" is not a mitigation)
+- Risks section is populated. An empty Risks section for a multi-team or L/XL strategy indicates unknowns haven't been surfaced, not that none exist. Each risk should have a concrete mitigation.
 
 #### 2. Testability — Can we verify this works?
 
@@ -42,6 +43,7 @@ You are scoring a RHAISTRAT strategy. Strategies describe implementation approac
 - Thresholds are numeric where applicable (size reduction, latency, error rates)
 - Edge cases are identified
 - Tests are binary pass/fail, not subjective assessment
+- Non-functional requirements have numeric thresholds (latency, throughput, error rates). "Good performance" or "scalable" are not testable. Missing NFRs for L/XL strategies is a gap.
 
 #### 3. Scope — Is it right-sized?
 
@@ -57,6 +59,7 @@ You are scoring a RHAISTRAT strategy. Strategies describe implementation approac
 - Effort estimate matches the work described
 - Single team, bounded component set
 - No scope expansion risk ("stretch goals", "and more")
+- Out-of-scope items are explicitly listed. A feature with no out-of-scope list for L/XL effort is a scope risk signal.
 
 #### 4. Architecture — Are integration patterns correct?
 
@@ -79,107 +82,50 @@ If architecture context is available, validate claims against it:
 
 ## Calibration Examples
 
-All examples are from real pipeline output (dashboard35 batch, April 2026) unless noted otherwise. Quotes are from reviewer assessments, not strategy text.
+All examples are from real RHOAI 3.4 Feature Refinement documents unless noted otherwise. Strategy IDs reference Jira items for traceability.
 
 ### Feasibility
 
-**F=2: RHAISTRAT-1374 (Remove Inline Providers from Llama Stack)**
-> Effort S is credible for config.yaml edits, Containerfile regeneration, doc updates, and test runs. No external blockers. Precedent established by prior inline::meta-reference removal — this is four more of the same operation.
+**F=2: RHAISTRAT-1161 (MLflow GA Integration in RHOAI)**
+GA promotion of existing Tech Preview — the work is bounded and precedented, not greenfield design. The support scope table enumerates 20+ MLflow sub-features with explicit In Scope/SDK/No designations, making the effort estimate verifiable. Risks are specific with mitigations: Z architecture support has a concrete fallback ("unless we get IBM support for Z builds"), and the upstream bug dependency (#21516) is tracked. No unresolved blockers on the critical path.
 
-No external blockers. Bounded work, credible effort. Established pattern proves the approach.
+**F=1: RHAISTRAT-1201 (API Key Management for MaaS)**
+Technical approach is sound — opaque keys, hash-only storage, Authorino gateway integration. But the Risks & Assumptions section is empty for a feature replacing the production authentication model. GA is conditional on an unresolved Jira blocker (RHOAIENG-51950) that the strategy never explains. Pluggable storage backend is hand-waved as "future support" with no design sketch. The approach is credible; the risk analysis is absent.
 
-**F=1: STRAT-737 (MaaS Quotas on Endpoints Page)**
-> Limitador counter query feasibility remains unvalidated — this is a hard blocker. Limitador is a rate limiter, not a usage tracker. Its counters track current-window consumption, not historical cumulative usage. The RFE requires "Cumulative Tokens Generated / Last 30 Days."
-
-The entire feature depends on a data source that may not exist. Nobody validated whether Limitador exposes the needed data. "Unvalidated assumption" is not a contingency plan.
-
-**F=1: RHAISTRAT-1418 (Responses API GA Readiness)**
-> vllm-gaudi is at v0.14.1 and does not have Responses API endpoints. The strategy claims "same changes (shared codebase)" which is incorrect. GA readiness on Gaudi requires either a version bump or explicit deferral.
-
-Technical approach is sound for one platform (vllm-cpu) but the "shared codebase" claim is factually wrong for the other (vllm-gaudi). Dependency gap has no fallback.
-
-**F=0: STRAT-163 (Data Provenance and Lineage)**
-> XL effort is undersized for 5+ team cross-component work. Critical design questions are all deferred to open questions. No contingency plans for any dependency. The Dashboard proxy path is incorrectly described: port 8343 serves the embedded MLflow UI, not the tracking API.
-
-All design questions deferred. No single owner across 5+ teams. Effort cannot be validated because the design is not done.
+**F=0: RHAISTRAT-1172 (RHAII UI — Inference Service SKU)**
+Status is "Not started." No effort estimate exists. The feature requires a UI that "functions consistently across certified 3rd party Kubernetes engines" (AKS, EKS, OpenShift) — a massive cross-platform undertaking — with zero implementation planning. It depends on at least 3 other undelivered RHAISTRAT features. Prerequisite sections are unanswered template placeholders. This is a vision document, not a strategy — fundamental design questions aren't deferred, they haven't been asked yet.
 
 ### Testability
 
-**T=2: RHAISTRAT-1284 (Test Connection During Creation Flow)**
-> Per-type probe specifications are concrete and verifiable (PostgreSQL: `SELECT 1`, S3: `HeadBucket`, MongoDB: `ping`, Redis: `PING`, HuggingFace: `GET /api/whoami`). The 10-second timeout is explicit. Error messages are specific and actionable. Button state transitions are binary pass/fail.
+**T=2: RHAISTRAT-1213 (AgentCard Discovery)**
+Nine acceptance criteria in Given/When/Then format, each binary-verifiable. Criteria cover the happy path (auto-create AgentCard CR with owner reference), failure modes (CRD not installed → 404 fallback to workload-based discovery), security verification (JWS signature → SignatureVerified condition, status.validSignature, label propagation), and cleanup (garbage collection via owner references). Every criterion can be validated by an automated test — no subjective assessment required.
 
-Every criterion has a concrete verification method with explicit thresholds. Binary pass/fail. Automatable.
+**T=1: RHAISTRAT-1161 (MLflow GA Integration)**
+Criteria exist and describe real user outcomes — "I can visualize metrics, artifacts and parameters from all the supported sources" — but lack concrete thresholds. Which metrics? What does "all supported sources" mean concretely? No edge cases (MLflow unavailable? artifact storage misconfigured?). The feature's support scope table is excellent documentation that enumerates 20+ sub-features, but none of that precision carries into the acceptance criteria. Good intent, insufficient specification.
 
-**T=1: STRAT-1625 (Resource Badges)**
-> The 'Updated' badge derivation is the weakest testability point. The strategy says 'Updated' applies when content changed in the current release but existed in a prior release. The dashboard has no prior-version state available client-side.
-
-Two of three badge types have clear verification. One has undefined derivation logic. Narrow gap, fixable.
-
-**T=1: RHAISTRAT-1418 (Responses API GA Readiness)**
-> The top-level success criterion is "a customer application written against the OpenAI Responses API works with zero code changes." There is still no test plan for this. No test suite, no reference application, no verification method. Without this test, the "zero code changes" claim is untestable marketing language.
-
-Criteria exist and are specific, but the gold-standard criterion has no verification infrastructure behind it. A claim without a test is not an acceptance criterion.
-
-**T=1: STRAT-334 (Live Tracing and Observability)**
-> "Users Understand Execution Flow" — subjective, not testable. "Near-real-time" — undefined latency threshold. "Tracing Maintains Usability" — "does not significantly disrupt" is subjective. "Trace Content is Actionable" — subjective.
-
-Criteria use subjective language with no measurable thresholds. Replacements needed: "spans appear within 5 seconds," "adds <10% latency," "renders within 1 second for 100 spans."
-
-**T=0: STRAT-163 (Data Provenance and Lineage)**
-> Acceptance criteria are aspirational with no verification protocol, no thresholds, no test matrix. "Automatically log" and "displays a graph" are not binary pass/fail. This is the hardest strategy to test because it spans 5+ teams and 6+ components with no integration test plan.
-
-Aspirational criteria with no verification protocol. No component names, no API endpoints, no expected outputs. Untestable as written.
-
-**T=0: RHAISTRAT-1422 (Hide Default Workbench Images)**
-> Still no acceptance criteria defined after two review cycles. Feature is inherently testable but criteria are missing. This is the easiest fix in the entire batch. This strategy is one 15-minute edit away from full approval.
-
-Feature is inherently testable — a simple config toggle with clear expected behavior. The problem is purely that the strategy does not define acceptance criteria. "Missing criteria" is a different failure mode from "untestable criteria."
+**T=0: RHAISTRAT-1208 (llm-d on xKS)**
+The entire acceptance criteria for a multi-team, multi-cloud, multi-quarter feature is one sentence: "Customers can easily deploy a supported llm-d instance on CKS/AKS and leverage it for our well lit paths." "Easily" is subjective. "Supported" is undefined. The four "well lit paths" (KV Cache, P/D Disaggregation, Expert Parallelism, Scheduling) are listed in requirements but have zero verification criteria. A single vague sentence for an L-sized feature across six teams is not an acceptance criterion — it's a wish.
 
 ### Scope
 
-**S=2: RHAISTRAT-1374 (Remove Inline Providers from Llama Stack)**
-> Finite enumerated set of four providers to remove from one component. Single team, single repo, bounded work. No scope expansion risk. The strategy does not use phrases like "and related functionality." The scope is a closed set.
+**S=2: RHAISTRAT-1167 (vLLM Support for MaaS)**
+Focused single deliverable: extend MaaS from llm-d-only to include vLLM. Four enumerated requirements (Create flow, Edit flow, OOTB configs, Existing deployments) — no "and related functionality." Out-of-scope is crisp: no auto-conversion of existing deployments, no customer ServingRuntime conversion. Single team boundary, bounded component set. The strategy knows exactly what it is and isn't.
 
-Finite, enumerated deliverables. Clear definition of done. One team, one component. Effort matches work.
+**S=1: RHAISTRAT-1235 (MaaS Usage Dashboard)**
+Two separately-tracked Jira features combined into one document: the admin dashboard (RHAISTRAT-1235) and the metric exposure pipeline (RHAISTRAT-730). Each is individually coherent, but bundling creates confusion — acceptance criteria mix two scopes and effort is harder to validate. Tech-preview status provides a natural scope limit that prevents runaway scope. Not unbounded, but not cleanly singular either.
 
-**S=1: STRAT-737 (MaaS Quotas on Endpoints Page)**
-> Major scope trap: bundles two separate features (MaaS quota display + Classic model quota system design). The Classic path requires designing an entirely new quota mechanism which is strategy-sized work on its own.
-
-Two distinct features bundled by proximity to the same UI page. The Classic quota mechanism is undesigned and represents separate strategy-sized work.
-
-**S=1: STRAT-334 (Live Tracing and Observability)**
-> Single coherent capability but spans 5 components across 4 teams. Effort L may be underestimated given the breadth of integration work.
-
-Single coherent capability but effort is underestimated for cross-team coordination. The feature itself is right-sized; the effort estimate is not.
-
-**S=0: RHAISTRAT-1153 (Feature Distribution Monitoring)**
-> Bundles three independently deliverable features that span three teams: (a) distribution computation CronJob + Prometheus metrics export, (b) historical distribution UI with time-series charts, (c) feature quality dashboards with filtering. Shipping as a single strategy creates a coordination bottleneck.
-
-Three independent features, different team owners. The SPLIT verdict (not REJECT) applies because other dimensions are adequate — the fix is decomposition, not revision.
-
-**S=0: STRAT-163 (Data Provenance and Lineage)**
-> Bundles 3+ independent features (pipeline instrumentation, MLflow-Model Registry linking, DAG visualization UI) across 5 teams and 6+ components. All-or-nothing delivery risk.
-
-Three independent features, different component owners, different dependencies. Six components across five teams. No single owner.
+**S=0: RHAISTRAT-1118 (MaaS Admin UI & API Key Management)**
+The document header itself lists two separate Jira features (RHOAISTRAT-638, RHAISTRAT-173). The body bundles 3+ independently shippable deliverables: Tier CRUD admin UI, API Key management for developers, and YAML/UI toggle for tier configuration. Each could ship alone and deliver value. MVP/Should Have/Nice to Have prioritization spans these separable concerns — confirming they were recognized as distinct but bundled anyway. The split test is unambiguous: three features in a trench coat.
 
 ### Architecture
 
-**A=2: RHAISTRAT-1374 (Remove Inline Providers from Llama Stack)**
-> All architectural claims validated against architecture docs. config.yaml-driven provider resolution via build.py/list-deps is the documented build path. Remote equivalents confirmed to exist. No other components depend on these inline providers.
+**A=2: RHAISTRAT-1213 (AgentCard Discovery)**
+Standard Kubernetes operator pattern: labeled workloads → controller watches → HTTP fetch → CRD status caching. Three controllers with clear separation of concerns (AgentCardSync creates CRs, AgentCard fetches metadata, NetworkPolicy enforces access). Owner references for garbage collection. SPIRE integration correctly scoped as conditional. RBAC requirements explicitly listed. Every architectural claim follows documented platform patterns.
 
-Components correctly identified. Integration pattern correct per architecture docs. No cross-component conflicts.
+**A=1: RHAISTRAT-1120 (OIDC Integration for MaaS)**
+Core integration pattern is sound: external OIDC → Authorino validation → group claim extraction → MaaS entitlement. But a requirement directly contradicts a known constraint — Requirement 4 demands "provider-agnostic" authorization while internal review confirms "groups logic *cannot* be vendor-agnostic, but must instead be vendor-specific." Neither approach is wrong individually, but claiming both creates an unresolved architectural conflict. The pattern is right; a key assumption within it is wrong.
 
-**A=1: STRAT-1625 (Resource Badges)**
-> Integration patterns are correct — purely client-side computation with no new API calls or backend changes. The dashboard's existing ClusterRole already has the needed permissions.
-
-Architecture is correct but one field name question is unresolved (OdhDocument `version` field existence). Minor gap, not a fundamental misunderstanding.
-
-**A=1: STRAT-728 (User-Level Secrets Management)**
-> Internal contradiction: impersonation vs. SA credentials. The strategy says the backend "impersonates the user via their forwarded token" but also describes BFF-level label filtering that implies SA credentials are used. If using user impersonation, the user's own RBAC determines visibility. If using SA credentials, the BFF must filter.
-
-Neither approach is wrong individually, but claiming both creates an ambiguous security model. Contradictory design assumptions are an architecture gap even when each assumption is individually valid.
-
-<!-- TODO: Eder — validate or replace with a real A=0 example from batch output. No strategy in 59 reviews scored A=0. -->
+<!-- A=0 is from pipeline output (dashboard35 batch). No RHOAI 3.4 refinement doc scored A=0 — architecture errors are rare in practice; gaps (A=1) are far more common. -->
 **A=0: STRAT-1547 (External Model Registration)**
 > HTTPRoute cannot directly proxy to external endpoints — the strategy's core traffic routing assumption is incorrect. The MaaS gateway accepts HTTPRoutes that reference internal Services. An external endpoint like api.openai.com is not a Kubernetes Service.
 
@@ -211,21 +157,21 @@ REJECT:   total < 3   OR   zeros in 2+ dimensions
 
 ## Expected Scores for Calibration Strategies
 
-Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from real pipeline reviews unless noted.
+Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from RHOAI 3.4 Feature Refinement documents.
 
 | Strategy | F | T | S | A | Total | Verdict |
 |----------|---|---|---|---|-------|---------|
-| RHAISTRAT-1374 (Llama Stack cleanup) | 2 | 2 | 2 | 2 | 8 | APPROVE |
-| RHAISTRAT-1284 (Test connection) | 1 | 2 | 2 | 1 | 6 | APPROVE |
-| STRAT-1625 (Resource badges) | 2 | 1 | 2 | 1 | 6 | APPROVE |
-| RHAISTRAT-1418 (Responses API GA) | 1 | 1 | 2 | 1 | 5 | REVISE |
-| RHAISTRAT-1422 (Hide workbench images) | 2 | 0 | 2 | 1 | 5 | REVISE |
-| STRAT-728 (User-level secrets) | 1 | 1 | 2 | 1 | 5 | REVISE |
-| STRAT-334 (Live tracing) | 1 | 1 | 1 | 1 | 4 | REVISE |
-| STRAT-737 (MaaS quotas) | 1 | 1 | 1 | 1 | 4 | REVISE |
-| RHAISTRAT-1153 (Feature distribution) | 1 | 1 | 0 | 1 | 3 | SPLIT |
-| STRAT-1547 (External models) | 0 | 1 | 1 | 0 | 2 | REJECT |
-| STRAT-163 (Data provenance) | 0 | 0 | 0 | 1 | 1 | REJECT |
+| RHAISTRAT-1213 (AgentCard Discovery) | 2 | 2 | 2 | 2 | 8 | APPROVE |
+| RHAISTRAT-1259 (Kagenti Cleanup) | 2 | 2 | 1 | 2 | 7 | APPROVE |
+| RHAISTRAT-1161 (MLflow GA) | 2 | 1 | 2 | 2 | 7 | APPROVE |
+| RHAISTRAT-1167 (vLLM for MaaS) | 2 | 1 | 2 | 2 | 7 | APPROVE |
+| RHAISTRAT-1084 (MCP Catalog) | 1 | 1 | 2 | 2 | 6 | APPROVE |
+| RHAISTRAT-1120 (OIDC for MaaS) | 1 | 1 | 2 | 1 | 5 | REVISE |
+| RHAISTRAT-1201 (API Key Mgmt) | 1 | 1 | 1 | 1 | 4 | REVISE |
+| RHAISTRAT-1208 (llm-d on xKS) | 1 | 0 | 1 | 1 | 3 | REVISE |
+| RHAISTRAT-1118 (MaaS Admin UI) | 1 | 1 | 0 | 1 | 3 | SPLIT |
+| RHAISTRAT-1204 (GUI AutoML) | 1 | 1 | 0 | 1 | 3 | SPLIT |
+| RHAISTRAT-1172 (RHAII UI) | 0 | 0 | 0 | 1 | 1 | REJECT |
 
 ## Output Format
 
