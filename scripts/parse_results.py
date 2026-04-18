@@ -7,8 +7,7 @@ Architecture), applies deterministic verdict rules, and writes a CSV.
 
 Verdict rules:
     APPROVE:  total >= 6  AND  no zeros
-    SPLIT:    scope = 0   AND  all others >= 1  AND  sum(others) >= 3
-    REVISE:   total >= 3  AND  at most one zero  AND  not SPLIT
+    REVISE:   total >= 3  AND  at most one zero
     REJECT:   total < 3   OR   2+ zeros
 
 Usage:
@@ -32,22 +31,12 @@ def compute_verdict(scores):
 
     Returns (verdict, needs_attention) tuple.
     """
-    f = scores["Feasibility"]
-    t = scores["Testability"]
-    s = scores["Scope"]
-    a = scores["Architecture"]
     total = scores["Total"]
-
     zero_count = sum(1 for c in CRITERIA if scores[c] == 0)
 
     # APPROVE: total >= 6 AND no zeros
     if total >= 6 and zero_count == 0:
         return "APPROVE", False
-
-    # SPLIT: scope = 0 AND all others >= 1 AND sum(others) >= 3
-    others = [f, t, a]
-    if s == 0 and all(x >= 1 for x in others) and sum(others) >= 3:
-        return "SPLIT", True
 
     # REJECT: total < 3 OR 2+ zeros
     if total < 3 or zero_count >= 2:
@@ -194,12 +183,11 @@ def main():
     # Summary
     approved = sum(1 for r in rows if r["Verdict"] == "APPROVE")
     revised = sum(1 for r in rows if r["Verdict"] == "REVISE")
-    split = sum(1 for r in rows if r["Verdict"] == "SPLIT")
     rejected = sum(1 for r in rows if r["Verdict"] == "REJECT")
     errors = sum(1 for r in rows if r["Verdict"] == "ERROR")
 
     print(f"Parsed {len(rows)} results -> {output_path}", file=sys.stderr)
-    print(f"  Approve: {approved}, Revise: {revised}, Split: {split}, Reject: {rejected}",
+    print(f"  Approve: {approved}, Revise: {revised}, Reject: {rejected}",
           file=sys.stderr)
     if errors:
         print(f"  Errors (data not found): {errors}", file=sys.stderr)

@@ -137,22 +137,18 @@ Verdicts are **deterministic** — computed from scores, not from your judgment.
 
 ```
 APPROVE:  total >= 6  AND  no zeros
-SPLIT:    scope = 0   AND  all other dimensions >= 1  AND  sum(other dimensions) >= 3
-REVISE:   total >= 3  AND  at most one zero  AND  not SPLIT
+REVISE:   total >= 3  AND  at most one zero
 REJECT:   total < 3   OR   zeros in 2+ dimensions
 ```
 
 **The "no zeros" rule:** A strategy scoring 2+2+2+0 = 6 does NOT approve. Every dimension is a gate.
 
-**The split trigger:** Scope = 0 specifically triggers SPLIT because the fix is decomposition, not revision. But only if other dimensions are adequate (all >= 1). A strategy with scope=0 AND feasibility=0 gets REJECT, not SPLIT.
-
-**Needs attention:** Only APPROVE passes the gate automatically. REVISE, SPLIT, and REJECT all require human review.
+**Needs attention:** Only APPROVE passes the gate automatically. REVISE and REJECT require human review.
 
 | Verdict | Needs Attention | What it means |
 |---------|-----------------|---------------|
 | APPROVE | false | Auto-approved, done |
 | REVISE  | true  | Fixable quality issues — human reviews and fixes |
-| SPLIT   | true  | Scope problem — human decides decomposition |
 | REJECT  | true  | Fundamental problems across multiple dimensions |
 
 ## Expected Scores for Calibration Strategies
@@ -169,8 +165,8 @@ Use these to sanity-check your scoring. If your scores diverge significantly, re
 | RHAISTRAT-1120 (OIDC for MaaS) | 1 | 1 | 2 | 1 | 5 | REVISE |
 | RHAISTRAT-1201 (API Key Mgmt) | 1 | 1 | 1 | 1 | 4 | REVISE |
 | RHAISTRAT-1208 (llm-d on xKS) | 1 | 0 | 1 | 1 | 3 | REVISE |
-| RHAISTRAT-1118 (MaaS Admin UI) | 1 | 1 | 0 | 1 | 3 | SPLIT |
-| RHAISTRAT-1204 (GUI AutoML) | 1 | 1 | 0 | 1 | 3 | SPLIT |
+| RHAISTRAT-1118 (MaaS Admin UI) | 1 | 1 | 0 | 1 | 3 | REVISE |
+| RHAISTRAT-1204 (GUI AutoML) | 1 | 1 | 0 | 1 | 3 | REVISE |
 | RHAISTRAT-1172 (RHAII UI) | 0 | 0 | 0 | 1 | 1 | REJECT |
 
 ## Output Format
@@ -188,7 +184,7 @@ TITLE: [strategy summary from the file]
 | Architecture    | X/2 | [brief explanation] |
 | **Total**       | **X/8** | |
 
-### Verdict: [APPROVE/REVISE/SPLIT/REJECT]
+### Verdict: [APPROVE/REVISE/REJECT]
 ### Needs Attention: [true/false]
 
 [One sentence summarizing the assessment]
