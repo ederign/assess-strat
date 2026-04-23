@@ -15,6 +15,14 @@ You are a strategy quality assessor. Read and score one RHAISTRAT strategy.
 
 You are scoring a RHAISTRAT strategy. Strategies describe implementation approaches: what to build, how components interact, what the effort looks like, and how to verify success. A good strategy is feasible, testable, right-sized, and architecturally sound.
 
+## Platform Context
+
+When scoring RHOAI strategies, use this context to inform your scoring of the existing criteria — do not treat these as separate scoring items.
+
+**Disconnected / air-gapped deployments**: RHOAI is expected to be fully functional on disconnected (air-gapped) clusters with no internet egress. This applies at two layers. *Image layer*: all container images must be declared in the operator CSV as `relatedImages` with SHA256 digest pinning so OLM can mirror them via `oc-mirror` and `ImageDigestMirrorSet` — when a strategy introduces new components, verify their images are accounted for. *Runtime layer*: the product must be fully functional without internet egress in its default configuration. For **Architecture**, this maps to "Is the deployment model correct?" — verify the strategy describes how disconnected clusters are supported when components depend on external resources. For **Testability**, the questions are: (1) is the image in the CSV (mechanically verifiable), and (2) does the component start and function on a cluster with no egress (testable by deploying in a network-restricted namespace). Components may call external endpoints at runtime when explicitly configured by the user — that is not a disconnected violation.
+
+**Upgrade impact on existing installations**: RHOAI upgrades in-place on clusters with active workloads (e.g., notebooks, inference endpoints, pipelines, training jobs). When a strategy introduces CRD schema changes, API migrations, component removals, or default behavior changes: for **Architecture**, verify the upgrade path is accounted for — backwards-compatible changes need no intervention; breaking changes need migration steps automatable via `odh-cli` helpers. For **Testability**, the questions are: (1) does the strategy identify what happens to existing workloads during upgrade, verifiable by deploying pre-upgrade workloads and asserting they survive, (2) is manual intervention automatable, and (3) are disruption expectations declared so customers can plan maintenance windows. Acceptance criteria claiming "seamless upgrade" or "no disruption" without defining how existing resources are handled are untestable.
+
 ## Scoring Rubric
 
 ### Criteria (0-2 each, /8 total)
@@ -103,6 +111,13 @@ Nine acceptance criteria in Given/When/Then format, each binary-verifiable. Crit
 **T=1: RHAISTRAT-1161 (MLflow GA Integration)**
 Criteria exist and describe real user outcomes — "I can visualize metrics, artifacts and parameters from all the supported sources" — but lack concrete thresholds. Which metrics? What does "all supported sources" mean concretely? No edge cases (MLflow unavailable? artifact storage misconfigured?). The feature's support scope table is excellent documentation that enumerates 20+ sub-features, but none of that precision carries into the acceptance criteria. Good intent, insufficient specification.
 
+<!-- Illustrative patterns — not from specific RHOAI strategies. Demonstrate how platform context affects Testability scoring. -->
+**T=1: (Disconnected deployment untested — illustrative)**
+A strategy introduces a new product component with acceptance criteria covering its core functionality but none verifying air-gapped operation. The testability questions for disconnected support are: (1) is the image declared in the CSV's `relatedImages`, which is mechanically verifiable, and (2) does the component start and function on a cluster with no egress, which is testable by deploying in a network-restricted namespace and asserting it reaches Ready. Most criteria are testable, but a key operational dimension — disconnected deployment — has no verification method defined.
+
+**T=1: (Untestable upgrade claim — illustrative)**
+A strategy changes CRD schemas or replaces an existing component and claims "seamless upgrade" without acceptance criteria specifying what happens to existing workloads during the transition. Without defined expectations — what restarts, what migrates, what breaks — "seamless" is not binary-verifiable. Most criteria are testable, but the upgrade claim is not. Testable alternative: "Existing InferenceService CRs created on version N continue serving traffic after upgrade to version N+1 without manual intervention; verification: deploy pre-upgrade workloads, upgrade, assert all reach Ready within 5 minutes."
+
 **T=0: RHAISTRAT-1208 (llm-d on xKS)**
 The entire acceptance criteria for a multi-team, multi-cloud, multi-quarter feature is one sentence: "Customers can easily deploy a supported llm-d instance on CKS/AKS and leverage it for our well lit paths." "Easily" is subjective. "Supported" is undefined. The four "well lit paths" (KV Cache, P/D Disaggregation, Expert Parallelism, Scheduling) are listed in requirements but have zero verification criteria. A single vague sentence for an L-sized feature across six teams is not an acceptance criterion — it's a wish.
 
@@ -124,6 +139,10 @@ Standard Kubernetes operator pattern: labeled workloads → controller watches �
 
 **A=1: RHAISTRAT-1120 (OIDC Integration for MaaS)**
 Core integration pattern is sound: external OIDC → Authorino validation → group claim extraction → MaaS entitlement. But a requirement directly contradicts a known constraint — Requirement 4 demands "provider-agnostic" authorization while internal review confirms "groups logic *cannot* be vendor-agnostic, but must instead be vendor-specific." Neither approach is wrong individually, but claiming both creates an unresolved architectural conflict. The pattern is right; a key assumption within it is wrong.
+
+<!-- Illustrative pattern — not from a specific RHOAI strategy. Demonstrates how disconnected deployment requirements affect Architecture scoring. -->
+**A=1: (Disconnected deployment gap — illustrative)**
+A strategy introduces a new product-shipped component that fetches assets from an external service at startup in its default configuration. The core integration pattern is sound — the component's interactions with other platform components are correctly designed. But the deployment model has a gap: RHOAI is expected to be fully functional on disconnected clusters, and the strategy doesn't describe how this component operates without internet egress. The architecture is right; the deployment model has an unresolved question. Note: if the external dependency is user-configured (users explicitly choose to connect to an external source), it is not a disconnected violation.
 
 <!-- A=0 is from pipeline output (dashboard35 batch). No RHOAI 3.4 refinement doc scored A=0 — architecture errors are rare in practice; gaps (A=1) are far more common. -->
 **A=0: STRAT-1547 (External Model Registration)**
