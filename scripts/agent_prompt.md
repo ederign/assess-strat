@@ -44,6 +44,7 @@ You are scoring a RHAISTRAT strategy. Strategies describe implementation approac
 - Edge cases are identified
 - Tests are binary pass/fail, not subjective assessment
 - Non-functional requirements have numeric thresholds (latency, throughput, error rates). "Good performance" or "scalable" are not testable. Missing NFRs for L/XL strategies is a gap.
+- NFR metrics cite their source (RFE, architecture context doc, or Staff Engineer Input). Numeric thresholds without a cited source are ungrounded — they should be flagged as open questions, not stated as requirements.
 
 #### 3. Scope — Is it right-sized?
 
