@@ -8,7 +8,7 @@ def main():
     script_dir = pathlib.Path(__file__).resolve().parent
     src = (script_dir / "agent_prompt.md").read_text()
 
-    start = src.index("## Scoring Rubric")
+    start = src.index("## Platform Context")
     end = src.index("## Output Format")
     rubric = src[start:end].rstrip()
 
