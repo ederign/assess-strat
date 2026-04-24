@@ -102,6 +102,10 @@ GA promotion of existing Tech Preview — the work is bounded and precedented, n
 **F=1: RHAISTRAT-1201 (API Key Management for MaaS)**
 Technical approach is sound — opaque keys, hash-only storage, Authorino gateway integration. But the Risks & Assumptions section is empty for a feature replacing the production authentication model. GA is conditional on an unresolved Jira blocker (RHOAIENG-51950) that the strategy never explains. Pluggable storage backend is hand-waved as "future support" with no design sketch. The approach is credible; the risk analysis is absent.
 
+<!-- Illustrative pattern — not from a specific RHOAI strategy. Demonstrates how multi-architecture requirements affect Feasibility scoring. -->
+**F=1: (Multi-arch effort absent from estimate — illustrative)**
+A strategy introduces a new component with compiled native dependencies (e.g., a Python runtime linking PyTorch and OpenBLAS) and estimates M-sized effort based on amd64 development. RHOAI ships on four architectures — building for ppc64le and s390x with native dependencies requires architecture-specific build scripts, source compilation, and custom Dockerfile stages. The technical approach is sound, but the effort estimate accounts for one of the four target architectures. The estimate is non-credible because it omits significant known work.
+
 **F=0: RHAISTRAT-1172 (RHAII UI — Inference Service SKU)**
 Status is "Not started." No effort estimate exists. The feature requires a UI that "functions consistently across certified 3rd party Kubernetes engines" (AKS, EKS, OpenShift) — a massive cross-platform undertaking — with zero implementation planning. It depends on at least 3 other undelivered RHAISTRAT features. Prerequisite sections are unanswered template placeholders. This is a vision document, not a strategy — fundamental design questions aren't deferred, they haven't been asked yet.
 
