@@ -178,7 +178,7 @@ REJECT:   total < 3   OR   zeros in 2+ dimensions
 
 ## Expected Scores for Calibration Strategies
 
-Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from RHOAI 3.4 Feature Refinement documents.
+Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from RHOAI 3.4 Feature Refinement documents. These scores were established before the Platform Context section was added — minor deviations (±1) in Architecture or Feasibility are expected if the strategy does or does not explicitly address disconnected, upgrade, or multi-arch concerns. Do not override a well-reasoned platform-context-informed score solely to match this table.
 
 | Strategy | F | T | S | A | Total | Verdict |
 |----------|---|---|---|---|-------|---------|
