@@ -4,6 +4,30 @@ description: Assess strategies against quality criteria. Pass a strategy file pa
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, TaskGet
 ---
 
+## Argument Validation
+
+Before doing anything else, check `$ARGUMENTS` for invalid input.
+
+1. **No flags accepted.** If any token in `$ARGUMENTS` starts with `--`, print the following and **stop — do not proceed with any further steps:**
+   ```
+   Error: Unknown flag `<flag>`. This skill does not accept flags.
+
+   Valid usage:
+     /assess-strat <file-path>           — assess a single strategy file
+     /assess-strat <directory-path>      — assess all strategies in a directory
+     /assess-strat <STRATEGY-KEY>        — assess by key (e.g., RHAISTRAT-1469)
+   ```
+
+2. **Single positional argument.** If `$ARGUMENTS` contains more than one non-flag token, print the following and **stop:**
+   ```
+   Error: Too many arguments. Provide exactly one: a file path, directory path, or strategy key.
+
+   Valid usage:
+     /assess-strat artifacts/strat-tasks/RHAISTRAT-1469.md
+     /assess-strat artifacts/strat-tasks/
+     /assess-strat RHAISTRAT-1469
+   ```
+
 ## Usage
 ```
 /assess-strat artifacts/strat-tasks/RHAISTRAT-1469.md

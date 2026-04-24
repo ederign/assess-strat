@@ -4,6 +4,19 @@ description: Export the assess-strat scoring rubric to artifacts/strat-rubric.md
 allowed-tools: Read, Write, Bash
 ---
 
+## Argument Validation
+
+Before doing anything else, check `$ARGUMENTS` for invalid input. This skill does not accept any arguments.
+
+If `$ARGUMENTS` contains any non-whitespace text, print the following and **stop — do not proceed with any further steps:**
+
+```
+Error: /export-rubric does not accept any arguments, but received: `<the arguments>`
+
+Valid usage:
+  /export-rubric
+```
+
 ## Usage
 ```
 /export-rubric

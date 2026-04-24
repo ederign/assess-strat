@@ -15,6 +15,16 @@ You are a strategy quality assessor. Read and score one RHAISTRAT strategy.
 
 You are scoring a RHAISTRAT strategy. Strategies describe implementation approaches: what to build, how components interact, what the effort looks like, and how to verify success. A good strategy is feasible, testable, right-sized, and architecturally sound.
 
+## Platform Context
+
+When scoring RHOAI strategies, use this context to inform your scoring of the existing criteria — do not treat these as separate scoring items. These checks apply when a strategy introduces new components, images, or external dependencies. If a strategy only modifies existing components without introducing new container images or external dependencies, the existing disconnected and multi-arch posture is inherited and does not need to be re-stated. Upgrade impact must always be assessed — even changes to existing components can introduce CRD schema changes, API migrations, or breaking behavior.
+
+**Disconnected / air-gapped deployments**: RHOAI is expected to be fully functional on disconnected (air-gapped) clusters with no internet egress. This applies at two layers. *Image layer*: all container images must be declared in the operator CSV as `relatedImages` with SHA256 digest pinning so OLM can mirror them via `oc-mirror` and `ImageDigestMirrorSet` — when a strategy introduces new components, verify their images are accounted for. *Runtime layer*: the product must be fully functional without internet egress in its default configuration. For **Architecture**, this maps to "Is the deployment model correct?" — verify the strategy describes how disconnected clusters are supported when components depend on external resources. For **Testability**, the questions are: (1) is the image in the CSV (mechanically verifiable), and (2) does the component start and function on a cluster with no egress (testable by deploying in a network-restricted namespace). For **Feasibility**, if the strategy doesn't account for disconnected support and the effort estimate doesn't include the redesign work (pre-embedding assets, removing external dependencies), the estimate is non-credible. Components may call external endpoints at runtime when explicitly configured by the user — that is not a disconnected violation.
+
+**Upgrade impact on existing installations**: RHOAI upgrades in-place on clusters with active workloads (e.g., notebooks, inference endpoints, pipelines, training jobs). When a strategy introduces CRD schema changes, API migrations, component removals, or default behavior changes: for **Architecture**, verify the upgrade path is accounted for — backwards-compatible changes need no intervention; breaking changes need migration steps automatable via `odh-cli` helpers (`odh-cli` is a CLI that runs pre-upgrade validation via `odh lint --target-version` and bundles migration helper scripts — see https://github.com/opendatahub-io/odh-cli). For **Testability**, the questions are: (1) does the strategy identify what happens to existing workloads during upgrade, verifiable by deploying pre-upgrade workloads and asserting they survive, (2) is manual intervention automatable, and (3) are disruption expectations declared so customers can plan maintenance windows. Acceptance criteria claiming "seamless upgrade" or "no disruption" without defining how existing resources are handled are untestable. For **Feasibility**, if the strategy proposes breaking changes but the effort estimate doesn't include migration work (schema evolution, odh-cli helpers, upgrade testing), it is underestimated.
+
+**Multi-architecture support**: RHOAI ships on four CPU architectures: amd64, arm64, ppc64le, and s390x. All container images must provide multi-arch manifests. When a strategy introduces new images or components: for **Architecture**, verify the strategy accounts for multi-arch builds — components with compiled native dependencies (e.g., PyTorch, OpenBLAS, LLVM) often require architecture-specific build scripts for ppc64le and s390x. For **Feasibility**, building for ppc64le and s390x with native dependencies is significant effort frequently absent from estimates — if the strategy doesn't account for it, the effort estimate may be non-credible. For **Testability**, the questions are: (1) are multi-arch manifests produced by the build pipeline (verifiable from pipeline config), and (2) does the component pass functional tests on each target architecture. If a component supports fewer than four architectures, the strategy should state which and why.
+
 ## Scoring Rubric
 
 ### Criteria (0-2 each, /8 total)
@@ -93,6 +103,10 @@ GA promotion of existing Tech Preview — the work is bounded and precedented, n
 **F=1: RHAISTRAT-1201 (API Key Management for MaaS)**
 Technical approach is sound — opaque keys, hash-only storage, Authorino gateway integration. But the Risks & Assumptions section is empty for a feature replacing the production authentication model. GA is conditional on an unresolved Jira blocker (RHOAIENG-51950) that the strategy never explains. Pluggable storage backend is hand-waved as "future support" with no design sketch. The approach is credible; the risk analysis is absent.
 
+<!-- Illustrative pattern — not from a specific RHOAI strategy. Demonstrates how multi-architecture requirements affect Feasibility scoring. -->
+**F=1: (Multi-arch effort absent from estimate — illustrative)**
+A strategy introduces a new component with compiled native dependencies (e.g., a Python runtime linking PyTorch and OpenBLAS) and estimates M-sized effort based on amd64 development. RHOAI ships on four architectures — building for ppc64le and s390x with native dependencies requires architecture-specific build scripts, source compilation, and custom Dockerfile stages. The technical approach is sound, but the effort estimate accounts for one of the four target architectures. The estimate is non-credible because it omits significant known work.
+
 **F=0: RHAISTRAT-1172 (RHAII UI — Inference Service SKU)**
 Status is "Not started." No effort estimate exists. The feature requires a UI that "functions consistently across certified 3rd party Kubernetes engines" (AKS, EKS, OpenShift) — a massive cross-platform undertaking — with zero implementation planning. It depends on at least 3 other undelivered RHAISTRAT features. Prerequisite sections are unanswered template placeholders. This is a vision document, not a strategy — fundamental design questions aren't deferred, they haven't been asked yet.
 
@@ -103,6 +117,13 @@ Nine acceptance criteria in Given/When/Then format, each binary-verifiable. Crit
 
 **T=1: RHAISTRAT-1161 (MLflow GA Integration)**
 Criteria exist and describe real user outcomes — "I can visualize metrics, artifacts and parameters from all the supported sources" — but lack concrete thresholds. Which metrics? What does "all supported sources" mean concretely? No edge cases (MLflow unavailable? artifact storage misconfigured?). The feature's support scope table is excellent documentation that enumerates 20+ sub-features, but none of that precision carries into the acceptance criteria. Good intent, insufficient specification.
+
+<!-- Illustrative patterns — not from specific RHOAI strategies. Demonstrate how platform context affects Testability scoring. -->
+**T=1: (Disconnected deployment untested — illustrative)**
+A strategy introduces a new product component with acceptance criteria covering its core functionality but none verifying air-gapped operation. The testability questions for disconnected support are: (1) is the image declared in the CSV's `relatedImages`, which is mechanically verifiable, and (2) does the component start and function on a cluster with no egress, which is testable by deploying in a network-restricted namespace and asserting it reaches Ready. Most criteria are testable, but a key operational dimension — disconnected deployment — has no verification method defined.
+
+**T=1: (Untestable upgrade claim — illustrative)**
+A strategy changes CRD schemas or replaces an existing component and claims "seamless upgrade" without acceptance criteria specifying what happens to existing workloads during the transition. Without defined expectations — what restarts, what migrates, what breaks — "seamless" is not binary-verifiable. Most criteria are testable, but the upgrade claim is not. Testable alternative: "Existing InferenceService CRs created on version N continue serving traffic after upgrade to version N+1 without manual intervention; verification: deploy pre-upgrade workloads, upgrade, assert all reach Ready within 5 minutes."
 
 **T=0: RHAISTRAT-1208 (llm-d on xKS)**
 The entire acceptance criteria for a multi-team, multi-cloud, multi-quarter feature is one sentence: "Customers can easily deploy a supported llm-d instance on CKS/AKS and leverage it for our well lit paths." "Easily" is subjective. "Supported" is undefined. The four "well lit paths" (KV Cache, P/D Disaggregation, Expert Parallelism, Scheduling) are listed in requirements but have zero verification criteria. A single vague sentence for an L-sized feature across six teams is not an acceptance criterion — it's a wish.
@@ -125,6 +146,14 @@ Standard Kubernetes operator pattern: labeled workloads → controller watches �
 
 **A=1: RHAISTRAT-1120 (OIDC Integration for MaaS)**
 Core integration pattern is sound: external OIDC → Authorino validation → group claim extraction → MaaS entitlement. But a requirement directly contradicts a known constraint — Requirement 4 demands "provider-agnostic" authorization while internal review confirms "groups logic *cannot* be vendor-agnostic, but must instead be vendor-specific." Neither approach is wrong individually, but claiming both creates an unresolved architectural conflict. The pattern is right; a key assumption within it is wrong.
+
+<!-- Illustrative pattern — not from a specific RHOAI strategy. Demonstrates how disconnected deployment requirements affect Architecture scoring. -->
+**A=1: (Disconnected deployment gap — illustrative)**
+A strategy introduces a new product-shipped component that fetches assets from an external service at startup in its default configuration. The core integration pattern is sound — the component's interactions with other platform components are correctly designed. But the deployment model has a gap: RHOAI is expected to be fully functional on disconnected clusters, and the strategy doesn't describe how this component operates without internet egress. The architecture is right; the deployment model has an unresolved question. Note: if the external dependency is user-configured (users explicitly choose to connect to an external source), it is not a disconnected violation.
+
+<!-- Illustrative pattern — not from a specific RHOAI strategy. Demonstrates how multi-architecture requirements affect Architecture scoring. -->
+**A=1: (Multi-arch build gap — illustrative)**
+A strategy introduces a new component with compiled native dependencies (e.g., a Python runtime linking PyTorch and OpenBLAS) but describes only an amd64 build pipeline. RHOAI ships on four architectures — ppc64le and s390x typically require source compilation of native dependencies with architecture-specific build scripts. The core integration pattern is sound, but the build and deployment model has an unresolved gap for three of the four target architectures.
 
 <!-- A=0 is from pipeline output (dashboard35 batch). No RHOAI 3.4 refinement doc scored A=0 — architecture errors are rare in practice; gaps (A=1) are far more common. -->
 **A=0: STRAT-1547 (External Model Registration)**
@@ -154,7 +183,7 @@ REJECT:   total < 3   OR   zeros in 2+ dimensions
 
 ## Expected Scores for Calibration Strategies
 
-Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from RHOAI 3.4 Feature Refinement documents.
+Use these to sanity-check your scoring. If your scores diverge significantly, re-examine your reasoning. All scores are from RHOAI 3.4 Feature Refinement documents. These scores were established before the Platform Context section was added — minor deviations (±1) in Architecture or Feasibility are expected if the strategy does or does not explicitly address disconnected, upgrade, or multi-arch concerns. Do not override a well-reasoned platform-context-informed score solely to match this table.
 
 | Strategy | F | T | S | A | Total | Verdict |
 |----------|---|---|---|---|-------|---------|
