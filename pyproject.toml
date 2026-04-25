@@ -1,0 +1,13 @@
+[project]
+name = "assess-strat"
+version = "0.1.0"
+description = "Claude Code plugin for scoring engineering strategy documents"
+requires-python = ">=3.11"
+
+[dependency-groups]
+dev = [
+    "pytest",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
